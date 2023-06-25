@@ -58,16 +58,29 @@ function add ?? "add.1", "add.2"
 echo $"example_function_call" /echo
 ```
 # Versions
+
 Current version 0.1
+
 Features of v0.1:
+
     1) printing
+    
     2) variables
+    
     3) user input
+    
     4) if statements
+    
     5) loops
+    
     6) functions
+    
 What new is planned for v0.2:
+
     1) type checking (check if a value is number or string)
+    
     2) type conversion
+    
 What new is planned for v0.3:
+
     1) lists
