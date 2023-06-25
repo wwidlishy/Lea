@@ -28,4 +28,4 @@ Printing user input to console:
 #Declare a variable to store user input
 "user input": input "Type something: " /input
 echo $"user input" /echo
-""
+```
