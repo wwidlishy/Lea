@@ -29,3 +29,21 @@ Printing user input to console:
 "user input": input "Type something: " /input
 echo $"user input" /echo
 ```
+Basic loop:
+```
+"i": 0
+"text": "Hello World!"
+
+loop $"i" != $"text".len-- ?? 0
+    echo $"text"[$"i"] /echo
+    "i": $"i"++
+/loop 0
+```
+If statement (no else-if and no else):
+```
+"i": 10
+
+if $"i" == 10 ?? 0
+    echo "Hello World!" /echo
+/if 0
+```
