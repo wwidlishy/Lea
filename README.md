@@ -47,3 +47,13 @@ if $"i" == 10 ?? 0
     echo "Hello World!" /echo
 /if 0
 ```
+Functions:
+```
+function add ?? "add.1", "add.2"
+    "add.result": $"add.1" + $"add.2"
+    return $"add.result" /return
+/function add
+
+"example_function_call": add 1, 2 /add
+echo $"example_function_call" /echo
+```
