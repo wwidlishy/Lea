@@ -1,7 +1,7 @@
 # Lea
 A new programming language i created using python3.
 
-If you want to look at my terrible code then you go to "src" branch.
+If you want to look at my terrible code then open "lea.py" file.
 
 # How to run .lea file?
 
