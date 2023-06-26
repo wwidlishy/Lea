@@ -31,7 +31,7 @@ class gl:
     stdfunctions = [
         'echo', 'tostring', 'input'
     ]
-    #name[str] = [dict] -> {to_parse[list], args[list],return[dynamic]}
+    #name[str] = [dict] -> {to_parse[list], args[list]}
     functions = {
 
     }
@@ -117,7 +117,10 @@ def evaluate(arg, line, noErrExit=False):
             function_call = re.search(fr'{function}(.*?)\/{function}', arg)
             if function_call:
                 if function == "echo":
-                    print(evaluate(function_call.group(1), line))
+                    a = evaluate(function_call.group(1), line)
+                    if isinstance(eval(str(a)), str):
+                        a = eval(a)
+                    print(a)
                     arg = arg.replace(f"echo{function_call.group(1)}/echo", "")
                 if function == "input":
                     input_ = input(evaluate(function_call.group(1), line))
@@ -154,7 +157,7 @@ def evaluate(arg, line, noErrExit=False):
             if function_call:
                 toparse = gl.functions[function][0]
                 args = gl.functions[function][1]
-                return_ = gl.functions[function][2]
+                return_ = None
 
                 rcontent = content = function_call.group(1)
 
@@ -162,6 +165,7 @@ def evaluate(arg, line, noErrExit=False):
                 content, strings = replace_strings_with_index(content)
 
                 content = [evaluate(replace_index_with_strings(i, strings), line, noErrExit) for i in content.split(',')]
+                
                 if len(content) == len(args):
                     pass
                 else:
@@ -171,9 +175,8 @@ def evaluate(arg, line, noErrExit=False):
                 for i in args:
                     gl.vars[i] = content[index]
                     index += 1
-                
-                parse(toparse, noErrExit, line)
-                arg = arg.replace(f"{function}{rcontent}/{function}", str(evaluate(return_, line, noErrExit)))
+                return_ = parse(toparse, noErrExit, line)
+                arg = arg.replace(f"{function}{rcontent}/{function}", str(evaluate(str(return_), line, noErrExit)))
 
         funcall = 0
         for function in gl.functions:
@@ -211,6 +214,8 @@ def evaluate(arg, line, noErrExit=False):
     
     try:
         arg = eval(str(arg))
+        if isinstance(arg, str):
+            return f"'{arg}'"
         return arg
     except:
         err(f"On line {line}: invalid syntax '{arg}'", noErrExit)
@@ -285,7 +290,9 @@ def parse(arg, noErrExit=False, lindex=0):
             skip_ += len(block)
 
             if evaluate(condition, lindex, noErrExit) == True:
-                parse(block, noErrExit, lindex)
+                output = parse(block, noErrExit, lindex)
+                if output != None:
+                    return output
 
         elif line[0:len('/if')] == '/if':
             continue
@@ -313,7 +320,9 @@ def parse(arg, noErrExit=False, lindex=0):
 
             try:
                 while evaluate(condition, lindex, noErrExit) == True:
-                    parse(block, noErrExit, lindex)
+                    output = parse(block, noErrExit, lindex)
+                    if output != None:
+                        return output
                     if evaluate(condition, lindex, noErrExit) != True:
                         break
             except KeyboardInterrupt:
@@ -327,6 +336,7 @@ def parse(arg, noErrExit=False, lindex=0):
             try:
                 name = replace_index_with_strings(line[len("function"):line.index("??")], strings).strip()
                 args = line[line.index("??")+2:len(line)].strip().split(',')
+                args = [eval(replace_index_with_strings(i, strings)) for i in args]
             except:
                 err(f"Lea: at line {lindex}: Invalid syntax '{replace_index_with_strings(line, strings)}'")
             
@@ -349,27 +359,16 @@ def parse(arg, noErrExit=False, lindex=0):
 
             block = block[0:in_]
             skip_ += len(block)
-            args = [evaluate(replace_index_with_strings(i, strings), lindex, noErrExit) for i in args]
 
-            return__ = None
+            gl.functions[name] = [block, args]
 
-            for i in block:
-                i = i.strip()
-                if i[0:len("return")] == "return":
-                    if "/return" in i:
-                        return__ = i[len("return"):i.index("/return")].strip()
-                        break
-                    else:
-                        err(f"Lea: at line {lindex}: return statement isn't ended by '/return'")
-
-            if return__ != None:
-                gl.functions[name] = [block, args, return__]
-            else:
-                gl.functions[name] = [block, args, None]
         elif line[0:len('/function')] == '/function':
             continue
         elif line[0:len('return')] == 'return':
-            continue
+            if "/return" in line:
+                return evaluate(line[len("return"):line.index("/return")].strip(), lindex, noErrExit)
+            else:
+                err(f"Lea: at line {lindex}: return statement isn't ended by '/return'")
         else:
             a = evaluate(line, lindex, noErrExit)
 try:
