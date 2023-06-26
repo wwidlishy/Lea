@@ -34,34 +34,38 @@ Basic loop:
 "i": 0
 "text": "Hello World!"
 
-loop $"i" != $"text".len-- ?? 0
+loop $"i" != $"text".len ??
     echo $"text"[$"i"] /echo
     "i": $"i"++
-/loop 0
+/loop
 ```
 If statement (no else-if and no else):
 ```
-"i": 10
+"i": 25
+"j": 50
 
-if $"i" == 10 ?? 0
+if $"i" == 25 ??
     echo "Hello World!" /echo
-/if 0
+    if $"j"/2 == $"i" ??
+        echo "Hello World!" /echo
+    /if
+/if
 ```
 Functions:
 ```
 function add ?? "add.1", "add.2"
     "add.result": $"add.1" + $"add.2"
     return $"add.result" /return
-/function add
+/function
 
 "example_function_call": add 1, 2 /add
 echo $"example_function_call" /echo
 ```
 # Versions
 
-Current version 0.1
+Current version 0.1.1
 
-Features of v0.1:
+Features of v0.1.1:
 
     1) printing
     
@@ -75,12 +79,10 @@ Features of v0.1:
     
     6) functions
     
-What new is planned for v0.2:
+What new is planned for next version:
 
     1) type checking (check if a value is number or string)
     
     2) type conversion
     
-What new is planned for v0.3:
-
-    1) lists
+    3) lists
