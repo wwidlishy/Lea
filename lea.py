@@ -27,7 +27,7 @@ def replace_index_with_strings(replaced_arg, strings_list):
     return original_arg
 
 class gl:
-    vars = {"true": True, "false": False}
+    vars = {}
     stdfunctions = [
         'echo', 'tostring', 'input'
     ]
@@ -216,6 +216,10 @@ def evaluate(arg, line, noErrExit=False):
         arg = eval(str(arg))
         if isinstance(arg, str):
             return f"'{arg}'"
+        if arg == True:
+            return 1
+        if arg == False:
+            return 0
         return arg
     except:
         err(f"On line {line}: invalid syntax '{arg}'", noErrExit)
@@ -289,7 +293,7 @@ def parse(arg, noErrExit=False, lindex=0):
             block = block[0:in_]
             skip_ += len(block)
 
-            if evaluate(condition, lindex, noErrExit) == True:
+            if evaluate(condition, lindex, noErrExit) == 1:
                 output = parse(block, noErrExit, lindex)
                 if output != None:
                     return output
@@ -319,11 +323,11 @@ def parse(arg, noErrExit=False, lindex=0):
             skip_ += len(block)
 
             try:
-                while evaluate(condition, lindex, noErrExit) == True:
+                while evaluate(condition, lindex, noErrExit) == 1:
                     output = parse(block, noErrExit, lindex)
                     if output != None:
                         return output
-                    if evaluate(condition, lindex, noErrExit) != True:
+                    if evaluate(condition, lindex, noErrExit) != 1:
                         break
             except KeyboardInterrupt:
                 err(f"Lea: at line {lindex}: Loop force exited by ^C")
