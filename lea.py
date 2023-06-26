@@ -78,7 +78,8 @@ class Regex:
                 err("Index out of range")
 def err(m, noErrExit=False):
     print(m)
-    if not noErrExit: exit(0)
+    if not noErrExit:
+        sys.exit(0)
 
 def evaluate(arg, line, noErrExit=False):
     for var in gl.vars:
@@ -183,16 +184,16 @@ def evaluate(arg, line, noErrExit=False):
 
     arg = re.sub(r"(\d+)\+\+", Regex.increment, arg)
     arg = re.sub(r"(\d+)\-\-", Regex.decrement, arg)
-    arg = re.sub(r'"(.*?)".len', Regex.len, arg)
-    arg = re.sub(r"'(.*?)'.len", Regex.len, arg)
+    arg = re.sub(r'"((?:[^"\\]|\\.)*?)"(?!(?:[^"\\]|\\)")\.len', Regex.len, arg)
+    arg = re.sub(r"'((?:[^'\\]|\\.)*?)'(?!(?:[^'\\]|\\)')\.len", Regex.len, arg)
     arg = re.sub(r'(\d+).len', Regex.nlen, arg)
     arg = re.sub(r'"(.*?)"\[(.*?)\]', Regex.strindex, arg)
     arg = re.sub(r'\'(.*?)\'\[(.*?)\]', Regex.strindex, arg)
 
     inc_match = re.search(r"(\d+)\+\+", arg)
     dec_match = re.search(r"(\d+)\-\-", arg)
-    len_match = re.search(r'"(.*?)".len', arg)
-    len_match2 = re.search(r"'(.*?)'.len", arg)
+    len_match = re.search(r'"((?:[^"\\]|\\.)*?)"(?!(?:[^"\\]|\\)")\.len', arg)
+    len_match2 = re.search(r"'((?:[^'\\]|\\.)*?)'(?!(?:[^'\\]|\\)')\.len", arg)
     nlen_match = re.search(r'(\d+).len', arg)
     sin_match = re.search(r'"(.*?)"\[(.*?)\]', arg)
     sin_match2 = re.search(r'\'(.*?)\'\[(.*?)\]', arg)
@@ -251,16 +252,20 @@ def parse(arg, noErrExit=False, lindex=0):
 
             try:
                 condition = replace_index_with_strings(line[len("if"):line.index("??")], strings).strip()
-                id = line[line.index("??")+2:len(line)].strip()
             except:
                 err(f"Lea: at line {lindex}: Invalid syntax '{replace_index_with_strings(line, strings)}'")
             
             block = arg[index+1:len(arg)]
+            ifstatements = 1
             in_ = 0
 
             for i in block:
-                if i.strip().replace(" ", "") == f"/if{id}":
-                    break
+                if i.strip()[0:len('if')] == "if":
+                    ifstatements += 1
+                if i.strip().replace(" ", "") == f"/if":
+                    ifstatements -= 1
+                    if ifstatements == 0:
+                        break
                 in_ += 1
 
             block = block[0:in_]
@@ -276,15 +281,17 @@ def parse(arg, noErrExit=False, lindex=0):
 
             try:
                 condition = replace_index_with_strings(line[len("loop"):line.index("??")], strings).strip()
-                id = line[line.index("??")+2:len(line)].strip()
             except:
                 err(f"Lea: at line {lindex}: Invalid syntax '{replace_index_with_strings(line, strings)}'")
             
             block = arg[index+1:len(arg)]
+            loopstatements = 1
             in_ = 0
 
             for i in block:
-                if i.strip().replace(" ", "") == f"/loop{id}":
+                if i.strip()[0:len("loop")] == "loop":
+                    loopstatements += 1
+                if i.strip().replace(" ", "") == f"/loop":
                     break
                 in_ += 1
 
@@ -315,11 +322,16 @@ def parse(arg, noErrExit=False, lindex=0):
                     err(f"Lea: at line {lindex}: invalid function name '{name}'")
 
             block = arg[index+1:len(arg)]
+            functionstatement = 1
             in_ = 0
 
             for i in block:
-                if i.strip().replace(" ", "") == f"/function{name}":
-                    break
+                if i.strip()[0:len("functions")] == "functions":
+                    functionstatement += 1
+                if i.strip().replace(" ", "") == f"/function":
+                    functionstatement -= 1
+                    if functionstatement == 0:
+                        break
                 in_ += 1
 
             block = block[0:in_]
@@ -358,7 +370,7 @@ except:
                 parse([input_], True)
 
         except KeyboardInterrupt:
-            exit()
+            sys.exit(0)
     err("Invalid File")
 
 parse(file)
