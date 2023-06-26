@@ -27,7 +27,37 @@ Basic programming language i'm developing using python
        /if
    /if
    ```
-   Notice shortened if notation won't work (I will add that later):
+   Or:
    ```bash
    "i": 1
-   if $"i" == 1 ?? echo "Hello World!" /echo /if
+   if $"i" == 1 ?? ;; echo "Hello World!" /echo ;; /if
+4) Loops
+   ```bash
+   "i": 0
+   "text": "Hello World!"
+   
+   loop $"i" != $"text".len ??
+       echo $"text"[$"i"] /echo
+       "i": $"i"++
+   /loop
+   ```
+   Or:
+   ```bash
+   "i": 0
+   "text": "Hello World!"
+   loop $"i" <= 10 ?? ;; echo $"text"[$"i"] /echo ;; "i": $"i"++ ;; /loop
+5) Functions
+   ```bash
+   function add ?? "add.1", "add.2"
+      "add.result": $"add.1" + $"add.2"
+      return $"add.result" /return
+   /function
+      
+   "example_function_call": add 1, 2 /add
+   echo $"example_function_call" /echo
+   ```
+   Or:
+   ```bash
+   function add ?? "add.1", "add.2" ;; return $"add.1" + $"add.2" /return ;; /function
+   echo add 1, 2 /add /echo
+   ```
