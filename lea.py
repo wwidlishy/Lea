@@ -233,6 +233,19 @@ def parse(arg, noErrExit=False, lindex=0):
         if line[0] == "#":
             continue
 
+        line, strings = replace_strings_with_index(line)
+
+        if ';;' in line:
+            line = line.split(';;')
+            line = [replace_index_with_strings(i, strings) for i in line]
+            lline = len(line)
+            rest = arg[index+1:len(arg)]
+            line += rest
+            parse(line, noErrExit, lindex-lline+1)
+            break
+
+        line = replace_index_with_strings(line, strings)
+
         if line[0] == '"' or line[0] == "'":
             line, strings = replace_strings_with_index(line)
             if line[0:len("$$$STR[0]$$$:")].replace(" ", "") == "$$$STR[0]$$$:":
