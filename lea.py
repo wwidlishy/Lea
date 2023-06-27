@@ -52,6 +52,9 @@ class Regex:
     def nlen(match):
         num = match.group(1)
         return str(len(str(num)))
+    def llen(match):
+        lcontent = f"[{match.group(1)}]"
+        return str(len(eval(str(lcontent))))
     def strindex(match):
         string, index = match.group(1), match.group(2)
         try:
@@ -192,6 +195,7 @@ def evaluate(arg, line, noErrExit=False):
     arg = re.sub(r'(\d+).len', Regex.nlen, arg)
     arg = re.sub(r'"(.*?)"\[(.*?)\]', Regex.strindex, arg)
     arg = re.sub(r'\'(.*?)\'\[(.*?)\]', Regex.strindex, arg)
+    arg = re.sub(r"\[(.*?)\]\.len", Regex.llen, arg)
 
     inc_match = re.search(r"(\d+)\+\+", arg)
     dec_match = re.search(r"(\d+)\-\-", arg)
@@ -200,14 +204,16 @@ def evaluate(arg, line, noErrExit=False):
     nlen_match = re.search(r'(\d+).len', arg)
     sin_match = re.search(r'"(.*?)"\[(.*?)\]', arg)
     sin_match2 = re.search(r'\'(.*?)\'\[(.*?)\]', arg)
+    llen_match = re.search(r"\[(.*?)\]\.len", arg)
 
     if inc_match: arg = evaluate(arg, line)
     if dec_match: arg = evaluate(arg, line)
     if len_match: arg = evaluate(arg, line)
-    if len_match2: arg = evaluate(arg, line)
+    if llen_match: arg = evaluate(arg, line)
     if nlen_match: arg = evaluate(arg, line)
     if sin_match: arg = evaluate(arg, line)
     if sin_match2: arg = evaluate(arg, line)
+    if llen_match: arg = evaluate(arg, line)
 
     if str(arg).replace(" ", "") == "":
         return ""
@@ -284,7 +290,7 @@ def parse(arg, noErrExit=False, lindex=0):
             for i in block:
                 if i.strip()[0:len('if')] == "if":
                     ifstatements += 1
-                if i.strip().replace(" ", "") == f"/if":
+                if i.strip().replace(" ", "")[0:len("/if")] == f"/if":
                     ifstatements -= 1
                     if ifstatements == 0:
                         break
@@ -315,8 +321,9 @@ def parse(arg, noErrExit=False, lindex=0):
             for i in block:
                 if i.strip()[0:len("loop")] == "loop":
                     loopstatements += 1
-                if i.strip().replace(" ", "") == f"/loop":
-                    break
+                if i.strip().replace(" ", "")[0:len("/loop")] == f"/loop":
+                    loopstatements -= 1
+                    if loopstatements == 0: break
                 in_ += 1
 
             block = block[0:in_]
