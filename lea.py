@@ -29,7 +29,7 @@ def replace_index_with_strings(replaced_arg, strings_list):
 class gl:
     vars = {}
     stdfunctions = [
-        'echo', 'tostring', 'input'
+        'echo', 'input', "type"
     ]
     #name[str] = [dict] -> {to_parse[list], args[list]}
     functions = {
@@ -120,33 +120,28 @@ def evaluate(arg, line, noErrExit=False):
             function_call = re.search(fr'{function}(.*?)\/{function}', arg)
             if function_call:
                 if function == "echo":
-                    a = evaluate(function_call.group(1), line)
+                    a = evaluate(str(function_call.group(1)), line)
                     if isinstance(eval(str(a)), str):
-                        a = eval(a)
+                        a = eval(str(a))
                     print(a)
                     arg = arg.replace(f"echo{function_call.group(1)}/echo", "")
                 if function == "input":
-                    input_ = input(evaluate(function_call.group(1), line))
+                    input_ = input(evaluate(str(function_call.group(1)), line))
                     try: 
-                        input_ = eval(input_)
+                        input_ = eval(str(input_))
                         arg = arg.replace(f"input{function_call.group(1)}/input", '"\'' + str(input_) + '\'"')
                     except:
                         arg = arg.replace(f"input{function_call.group(1)}/input", '"' + input_ + '"')
-                if function == "tostring":
-                    a = evaluate(function_call.group(1), line)
-    
-                    try:
-                        a = eval(a)
-                    except:
-                        if isinstance(a, str):
-                            arg = arg.replace(f"tostring{function_call.group(1)}/tostring", '"' + str(a) + '"')
-                        else:
-                            arg = arg.replace(f"tostring{function_call.group(1)}/tostring", '"\'' + str(a) + '\'"')
-                    
+                if function == "type":
+                    a = function_call.group(1)
+                    a = eval(str(evaluate(str(a), line)))
+
                     if isinstance(a, str):
-                        arg = arg.replace(f"tostring{function_call.group(1)}/tostring", '"' + str(a) + '"')
-                    else:
-                        arg = arg.replace(f"tostring{function_call.group(1)}/tostring", '"\'' + str(a) + '\'"')
+                        arg = arg.replace(f"type{function_call.group(1)}/type", '"string"')
+                    if isinstance(a, int) or isinstance(a, float):
+                        arg = arg.replace(f"type{function_call.group(1)}/type", '"number"')
+                    if isinstance(a, list):
+                        arg = arg.replace(f"type{function_call.group(1)}/type", '"array"')
         funcall = 0
         for function in gl.stdfunctions:
             function_call = re.search(fr'{function}(.*?)\/{function}', arg)
