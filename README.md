@@ -61,3 +61,20 @@ Basic programming language i'm developing using python
    function add ?? "add.1", "add.2" ;; return $"add.1" + $"add.2" /return ;; /function
    echo add 1, 2 /add /echo
    ```
+6) Type checking
+   for a string returns "string"
+   for a number returns "number"
+   for an array returns "array"
+   ```bash
+   "1": 10
+   "2": 10.5
+   "3": "Hello World!"
+   "4": "10"
+   "5": [1, 2, 3]
+   
+   echo type $"1" /type /echo
+   echo type $"2" /type /echo
+   echo type $"3" /type /echo
+   echo type $"4" /type /echo
+   echo type $"5" /type /echo
+   ```
