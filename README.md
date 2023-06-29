@@ -85,7 +85,7 @@ Basic programming language i'm developing using python
    "my_var": 10
    ```
    main.lea
-   ```
+   ```bash
    inc "lib.lea" /inc
    echo $"my_var" /echo
    ```
