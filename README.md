@@ -78,3 +78,13 @@ Basic programming language i'm developing using python
    echo type $"4" /type /echo
    echo type $"5" /type /echo
    ```
+7) Including an file
+   lib.lea
+   ```bash
+   "my_var": 10
+   ```
+   main.lea
+   ```
+   inc "lib.lea" /inc
+   echo $"my_var" /echo
+   ```
