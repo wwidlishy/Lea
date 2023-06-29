@@ -2,6 +2,12 @@
 
 Basic programming language i'm developing using python
 
+# Installation guide
+
+1) download repository
+2) excract it to empty folder
+3) add the folder to path
+
 # Examples
 
 1) Hello World!
