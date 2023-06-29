@@ -29,7 +29,7 @@ def replace_index_with_strings(replaced_arg, strings_list):
 class gl:
     vars = {}
     stdfunctions = [
-        'echo', 'input', "type"
+        'echo', 'input', "type", "inc"
     ]
     #name[str] = [dict] -> {to_parse[list], args[list]}
     functions = {
@@ -84,7 +84,7 @@ def err(m, noErrExit=False):
     if not noErrExit:
         sys.exit(0)
 
-def evaluate(arg, line, noErrExit=False):
+def evaluate(arg, line, noErrExit=False, fname=sys.argv[1]):
     for var in gl.vars:
         value = ""
 
@@ -121,8 +121,12 @@ def evaluate(arg, line, noErrExit=False):
             if function_call:
                 if function == "echo":
                     a = evaluate(str(function_call.group(1)), line)
-                    if isinstance(eval(str(a)), str):
-                        a = eval(str(a))
+                    if len(str(a)) >= 1:
+                        if str(a)[0] == "'":
+                            try:
+                                a = eval(str(a))
+                            except:
+                                err(f"Lea: at line {line}, file '{fname}': invalid syntax '{a}'")
                     print(a)
                     arg = arg.replace(f"echo{function_call.group(1)}/echo", "")
                 if function == "input":
@@ -134,7 +138,7 @@ def evaluate(arg, line, noErrExit=False):
                         arg = arg.replace(f"input{function_call.group(1)}/input", '"' + input_ + '"')
                 if function == "type":
                     a = function_call.group(1)
-                    a = eval(str(evaluate(str(a), line)))
+                    a = evaluate(str(a), line)
 
                     if isinstance(a, str):
                         arg = arg.replace(f"type{function_call.group(1)}/type", '"string"')
@@ -142,6 +146,16 @@ def evaluate(arg, line, noErrExit=False):
                         arg = arg.replace(f"type{function_call.group(1)}/type", '"number"')
                     if isinstance(a, list):
                         arg = arg.replace(f"type{function_call.group(1)}/type", '"array"')
+                if function == "inc":
+                    oa = function_call.group(1)
+                    a = eval(str(evaluate(str(oa), line)))
+                    os.chdir(os.path.dirname(os.path.abspath(sys.argv[1])))
+                    if os.path.exists(a):
+                        lib_file = open(a, 'r').read().split('\n')
+                        parse(lib_file, noErrExit, line, oa)
+                    else:
+                        err(f"Lea: at line {line}, file {fname}: File '{oa}' not found")
+                    arg = arg.replace(f"inc{function_call.group(1)}/inc", '')
         funcall = 0
         for function in gl.stdfunctions:
             function_call = re.search(fr'{function}(.*?)\/{function}', arg)
@@ -167,7 +181,7 @@ def evaluate(arg, line, noErrExit=False):
                 if len(content) == len(args):
                     pass
                 else:
-                    err(f"Lea: at line {line}: for function call '{function}': expected {len(args)} arguments but got {len(content)}")
+                    err(f"Lea: at line {line}, file '{fname}': for function call '{function}': expected {len(args)} arguments but got {len(content)}")
 
                 index = 0
                 for i in args:
@@ -223,10 +237,10 @@ def evaluate(arg, line, noErrExit=False):
             return 0
         return arg
     except:
-        err(f"On line {line}: invalid syntax '{arg}'", noErrExit)
+        err(f"Lea: at line {line}, file '{fname}': invalid syntax '{arg}'", noErrExit)
         return ""
 
-def parse(arg, noErrExit=False, lindex=0):
+def parse(arg, noErrExit=False, lindex=0, fname=sys.argv[1]):
     skip_ = 0
     index = -1
     for line in arg:
@@ -276,7 +290,7 @@ def parse(arg, noErrExit=False, lindex=0):
             try:
                 condition = replace_index_with_strings(line[len("if"):line.index("??")], strings).strip()
             except:
-                err(f"Lea: at line {lindex}: Invalid syntax '{replace_index_with_strings(line, strings)}'")
+                err(f"Lea: at line {lindex}, file '{fname}': Invalid syntax '{replace_index_with_strings(line, strings)}'")
             
             block = arg[index+1:len(arg)]
             ifstatements = 1
@@ -307,7 +321,7 @@ def parse(arg, noErrExit=False, lindex=0):
             try:
                 condition = replace_index_with_strings(line[len("loop"):line.index("??")], strings).strip()
             except:
-                err(f"Lea: at line {lindex}: Invalid syntax '{replace_index_with_strings(line, strings)}'")
+                err(f"Lea: at line {lindex}, file '{fname}': Invalid syntax '{replace_index_with_strings(line, strings)}'")
             
             block = arg[index+1:len(arg)]
             loopstatements = 1
@@ -332,7 +346,7 @@ def parse(arg, noErrExit=False, lindex=0):
                     if evaluate(condition, lindex, noErrExit) != 1:
                         break
             except KeyboardInterrupt:
-                err(f"Lea: at line {lindex}: Loop force exited by ^C")
+                err(f"Lea: at line {lindex}, file '{fname}': Loop force exited by ^C")
 
         elif line[0:len('/loop')] == '/loop':
             continue
@@ -342,13 +356,16 @@ def parse(arg, noErrExit=False, lindex=0):
             try:
                 name = replace_index_with_strings(line[len("function"):line.index("??")], strings).strip()
                 args = line[line.index("??")+2:len(line)].strip().split(',')
-                args = [eval(replace_index_with_strings(i, strings)) for i in args]
+                if len(args) == 1 and args[0] == '':
+                    pass
+                else:
+                    args = [eval(replace_index_with_strings(i, strings)) for i in args]
             except:
-                err(f"Lea: at line {lindex}: Invalid syntax '{replace_index_with_strings(line, strings)}'")
+                err(f"Lea: at line {lindex}, file '{fname}': Invalid syntax '{replace_index_with_strings(line, strings)}'")
             
             for i in " \t()[]{}*&^%$#@!-=+*/":
                 if i in name:
-                    err(f"Lea: at line {lindex}: invalid function name '{name}'")
+                    err(f"Lea: at line {lindex}, file '{fname}': invalid function name '{name}'")
 
             block = arg[index+1:len(arg)]
             functionstatement = 1
@@ -374,7 +391,7 @@ def parse(arg, noErrExit=False, lindex=0):
             if "/return" in line:
                 return evaluate(line[len("return"):line.index("/return")].strip(), lindex, noErrExit)
             else:
-                err(f"Lea: at line {lindex}: return statement isn't ended by '/return'")
+                err(f"Lea: at line {lindex}, file '{fname}': return statement isn't ended by '/return'")
         else:
             a = evaluate(line, lindex, noErrExit)
 try:
