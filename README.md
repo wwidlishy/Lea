@@ -51,7 +51,7 @@ Basic programming language i'm developing using python
    ```bash
    "i": 0
    "text": "Hello World!"
-   loop $"i" <= 10 ?? ;; echo $"text"[$"i"] /echo ;; "i": $"i"++ ;; /loop
+   loop $"i" != $"text".len ?? ;; echo $"text"[$"i"] /echo ;; "i": $"i"++ ;; /loop
 5) Functions
    ```bash
    function add ?? "add.1", "add.2"
