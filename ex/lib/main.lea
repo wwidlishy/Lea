@@ -1,0 +1,4 @@
+inc "lib.lea" /inc
+
+echo $"my_var" /echo
+my_func  /my_func

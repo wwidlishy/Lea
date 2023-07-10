@@ -1,0 +1,24 @@
+function fibonaci ?? "fibonaci.n"
+    "fibonaci.n1": 0 ;; "fibonaci.n2": 1
+    "fibonaci.count": 0 ;; "fibonaci.nth": 0
+
+    if $"fibonaci.n" <= 0 ??
+        return 0 /return
+    /if
+    if $"fibonaci.n" == 1 ??
+        echo "fibonaci seq:" /echo
+        echo $"fibonaci.n1" /echo
+        return 0 /return
+    /if
+    echo "fibonaci seq:" /echo
+    loop $"fibonaci.count" < $"fibonaci.n" ??
+        echo $"fibonaci.n1" /echo
+        "fibonaci.nth": $"fibonaci.n1" + $"fibonaci.n2"
+        "fibonaci.n1": $"fibonaci.n2"
+        "fibonaci.n2": $"fibonaci.nth"
+        "fibonaci.count": $"fibonaci.count"++
+    /loop
+    return 0 /return
+/function
+
+fibonaci 7 /fibonaci

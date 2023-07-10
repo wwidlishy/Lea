@@ -1,0 +1,17 @@
+"i": 1
+
+loop $"i" <= 100 ??
+    if ($"i" % 5 == 0) & ($"i" % 7 == 0) ??
+        echo "FizzBuzz" /echo
+    /if
+    if ($"i" % 5 == 0) & ($"i" % 7 != 0) ??
+        echo "Fizz" /echo
+    /if
+    if ($"i" % 7 == 0) & ($"i" % 5 != 0) ??
+        echo "Buzz" /echo
+    /if
+    if ($"i" % 7 != 0) & ($"i" % 5 != 0) ??
+        echo $"i" /echo
+    /if
+    "i": $"i"++
+/loop

@@ -1,5 +1,17 @@
+#TODO: Independence from pythons 'eval' function
 import os, sys
 import re
+
+def find_substring_indexes(string, substring):
+    indexes = []
+    index = -1
+    while True:
+        # Find the next occurrence of the substring after the previous index
+        index = string.find(substring, index + 1)
+        if index == -1:
+            break  # No more occurrences
+        indexes.append(index)
+    return indexes
 
 def replace_strings_with_index(newArg):
     strings_list = []
@@ -84,7 +96,7 @@ def err(m, noErrExit=False):
     if not noErrExit:
         sys.exit(0)
 
-def evaluate(arg, line, noErrExit=False, fname=sys.argv[1]):
+def evaluate(arg, line, noErrExit=False, fname=""):
     for var in gl.vars:
         value = ""
 
@@ -117,45 +129,57 @@ def evaluate(arg, line, noErrExit=False, fname=sys.argv[1]):
 
     while True:
         for function in gl.stdfunctions:
-            function_call = re.search(fr'{function}(.*?)\/{function}', arg)
-            if function_call:
-                if function == "echo":
-                    a = evaluate(str(function_call.group(1)), line)
-                    if len(str(a)) >= 1:
-                        if str(a)[0] == "'":
-                            try:
-                                a = eval(str(a))
-                            except:
-                                err(f"Lea: at line {line}, file '{fname}': invalid syntax '{a}'")
-                    print(a)
-                    arg = arg.replace(f"echo{function_call.group(1)}/echo", "")
-                if function == "input":
-                    input_ = input(evaluate(str(function_call.group(1)), line))
-                    try: 
-                        input_ = eval(str(input_))
-                        arg = arg.replace(f"input{function_call.group(1)}/input", '"\'' + str(input_) + '\'"')
-                    except:
-                        arg = arg.replace(f"input{function_call.group(1)}/input", '"' + input_ + '"')
-                if function == "type":
-                    a = function_call.group(1)
-                    a = evaluate(str(a), line)
+            arg, strings = replace_strings_with_index(arg)
+            while function in arg:
+                if arg.count(function)/2 == arg.count(f"/{function}"):
+                    ocontent = arg[arg.index(function)+len(function):len(arg)]
+                    skip = ocontent.count(function)-ocontent.count(f"/{function}")
 
-                    if isinstance(a, str):
-                        arg = arg.replace(f"type{function_call.group(1)}/type", '"string"')
-                    if isinstance(a, int) or isinstance(a, float):
-                        arg = arg.replace(f"type{function_call.group(1)}/type", '"number"')
-                    if isinstance(a, list):
-                        arg = arg.replace(f"type{function_call.group(1)}/type", '"array"')
-                if function == "inc":
-                    oa = function_call.group(1)
-                    a = eval(str(evaluate(str(oa), line)))
-                    os.chdir(os.path.dirname(os.path.abspath(sys.argv[1])))
-                    if os.path.exists(a):
-                        lib_file = open(a, 'r').read().split('\n')
-                        parse(lib_file, noErrExit, line, oa)
+                    index = None
+
+                    for i in find_substring_indexes(ocontent, f"/{function}"):
+                        if skip == 0:
+                            index = i
+                            break
+                        skip -= 1
+                    
+                    if index:
+                        content = ocontent[0:index]
                     else:
-                        err(f"Lea: at line {line}, file {fname}: File '{oa}' not found")
-                    arg = arg.replace(f"inc{function_call.group(1)}/inc", '')
+                        err(f"Lea: at line {line}, file '{fname}': function's '{function}' arguments aren't properly enclosed")
+                    arg = replace_index_with_strings(arg, strings)
+
+                    ret = ""
+                    content = replace_index_with_strings(content, strings)
+                    parsed_content = str(evaluate(content, line, noErrExit, fname)).strip()
+
+                    if function == 'echo':
+                        print(eval(parsed_content))
+                        pass
+                    if function == 'input':
+                        ret = f'"{input(eval(parsed_content))}"'
+                    if function == 'type':
+                        parsed_content = eval(parsed_content)
+                        if isinstance(parsed_content, str):
+                            ret = '"string"'
+                        if isinstance(parsed_content, int) or isinstance(parsed_content, float):
+                            ret = '"number"'
+                        if isinstance(parsed_content, list):
+                            ret = '"array"'
+                    if function == "inc":
+                        os.chdir(os.path.dirname(os.path.abspath(fname)))
+                        if os.path.exists(eval(parsed_content)):
+                            lib_file = open(eval(parsed_content), 'r').read().split('\n')
+                            parse(lib_file, noErrExit, line, eval(parsed_content))
+                            
+                        else:
+                            err(f"Lea: at line {line}, file {fname}: File '{eval(parsed_content)}' not found")
+                    arg = arg.replace(f"{function}{replace_index_with_strings(content, strings)}/{function}", ret)
+
+                else:
+                    err(f"Lea: at line {line}, file '{fname}': function's '{function}' arguments aren't properly enclosed")
+            arg = replace_index_with_strings(arg, strings)    
+
         funcall = 0
         for function in gl.stdfunctions:
             function_call = re.search(fr'{function}(.*?)\/{function}', arg)
@@ -165,30 +189,74 @@ def evaluate(arg, line, noErrExit=False, fname=sys.argv[1]):
 
     while True:
         for function in gl.functions:
-            function_call = re.search(fr'{function}(.*?)\/{function}', arg)
-            if function_call:
-                toparse = gl.functions[function][0]
-                args = gl.functions[function][1]
-                return_ = None
+            arg, strings = replace_strings_with_index(arg)
+            while function in arg:
+                if arg.count(function)/2 == arg.count(f"/{function}"):
+                    ocontent = arg[arg.index(function)+len(function):len(arg)]
+                    skip = ocontent.count(function)-ocontent.count(f"/{function}")
 
-                rcontent = content = function_call.group(1)
+                    index = None
 
-                content = function_call.group(1).strip()
-                content, strings = replace_strings_with_index(content)
+                    for i in find_substring_indexes(ocontent, f"/{function}"):
+                        if skip == 0:
+                            index = i
+                            break
+                        skip -= 1
+                    
+                    if index:
+                        content = ocontent[0:index]
+                    else:
+                        err(f"Lea: at line {line}, file '{fname}': function's '{function}' arguments aren't properly enclosed")
+                    arg = replace_index_with_strings(arg, strings)
 
-                content = [evaluate(replace_index_with_strings(i, strings), line, noErrExit) for i in content.split(',')]
-                
-                if len(content) == len(args):
-                    pass
+                    ret = ""
+                    content = replace_index_with_strings(content, strings)
+                    parsed_content = str(evaluate(content, line, noErrExit, fname)).strip()
+                    
+                    toparse = gl.functions[function][0]
+                    reqArgs = gl.functions[function][1]
+                    
+                    if parsed_content == '':
+                        if reqArgs == ['']:
+                            ret = str(parse(toparse, noErrExit, line, fname))
+                            if ret == None:
+                                ret = ""
+                        else:
+                            err(f"Lea: at line {line}, file '{fname}': Insufficient arguments")
+                    elif isinstance(eval(parsed_content), tuple):
+                        
+                        if len(reqArgs) == len(eval(parsed_content)):
+                            index = -1
+                            for rarg in reqArgs:
+                                index += 1
+                                gl.vars[rarg] = eval(str(evaluate(str(eval(parsed_content)[index]), line, noErrExit, fname)))
+                            ret = str(parse(toparse, noErrExit, line, fname))
+                            if ret == None:
+                                ret = ""
+
+                        else:
+                            err(f"Lea: at line {line}, file '{fname}': Insufficient arguments")
+                    else:
+                        if reqArgs != ['']:
+                            if len(reqArgs) == 1:
+                                gl.vars[reqArgs[0]] = eval(parsed_content)
+                                ret = parse(toparse, noErrExit, line, fname)
+                                if ret == None:
+                                    ret = ""
+                                
+                            else:
+                                err(f"Lea: at line {line}, file '{fname}': Insufficient arguments")
+                        else:
+                            if parsed_content == '':
+                                parse(toparse, noErrExit, line, fname)
+                            else:
+                                err(f"Lea: at line {line}, file '{fname}': Insufficient arguments")
+
+                    arg = arg.replace(f"{function}{replace_index_with_strings(content, strings)}/{function}", ret)
+
                 else:
-                    err(f"Lea: at line {line}, file '{fname}': for function call '{function}': expected {len(args)} arguments but got {len(content)}")
-
-                index = 0
-                for i in args:
-                    gl.vars[i] = content[index]
-                    index += 1
-                return_ = parse(toparse, noErrExit, line)
-                arg = arg.replace(f"{function}{rcontent}/{function}", str(evaluate(str(return_), line, noErrExit)))
+                    err(f"Lea: at line {line}, file '{fname}': function's '{function}' arguments aren't properly enclosed")
+            arg = replace_index_with_strings(arg, strings)    
 
         funcall = 0
         for function in gl.functions:
@@ -215,14 +283,14 @@ def evaluate(arg, line, noErrExit=False, fname=sys.argv[1]):
     sin_match2 = re.search(r'\'(.*?)\'\[(.*?)\]', arg)
     llen_match = re.search(r"\[(.*?)\]\.len", arg)
 
-    if inc_match: arg = evaluate(arg, line)
-    if dec_match: arg = evaluate(arg, line)
-    if len_match: arg = evaluate(arg, line)
-    if llen_match: arg = evaluate(arg, line)
-    if nlen_match: arg = evaluate(arg, line)
-    if sin_match: arg = evaluate(arg, line)
-    if sin_match2: arg = evaluate(arg, line)
-    if llen_match: arg = evaluate(arg, line)
+    if inc_match: arg = evaluate(arg, line, noErrExit, fname)
+    if dec_match: arg = evaluate(arg, line, noErrExit, fname)
+    if len_match: arg = evaluate(arg, line, noErrExit, fname)
+    if llen_match: arg = evaluate(arg, line, noErrExit, fname)
+    if nlen_match: arg = evaluate(arg, line, noErrExit, fname)
+    if sin_match: arg = evaluate(arg, line, noErrExit, fname)
+    if sin_match2: arg = evaluate(arg, line, noErrExit, fname)
+    if llen_match: arg = evaluate(arg, line, noErrExit, fname)
 
     if str(arg).replace(" ", "") == "":
         return ""
@@ -240,7 +308,7 @@ def evaluate(arg, line, noErrExit=False, fname=sys.argv[1]):
         err(f"Lea: at line {line}, file '{fname}': invalid syntax '{arg}'", noErrExit)
         return ""
 
-def parse(arg, noErrExit=False, lindex=0, fname=sys.argv[1]):
+def parse(arg, noErrExit=False, lindex=0, fname=''):
     skip_ = 0
     index = -1
     for line in arg:
@@ -278,7 +346,7 @@ def parse(arg, noErrExit=False, lindex=0, fname=sys.argv[1]):
                 value = line[len("$$$STR[0]$$$:"):len(line)].strip()
                 value = replace_index_with_strings(value, strings)
 
-                value = evaluate(value, lindex, noErrExit)
+                value = evaluate(value, lindex, noErrExit, fname)
                 try:
                     value = eval(value)
                 except:
@@ -308,7 +376,7 @@ def parse(arg, noErrExit=False, lindex=0, fname=sys.argv[1]):
             block = block[0:in_]
             skip_ += len(block)
 
-            if evaluate(condition, lindex, noErrExit) == 1:
+            if evaluate(condition, lindex, noErrExit, fname) == 1:
                 output = parse(block, noErrExit, lindex)
                 if output != None:
                     return output
@@ -339,11 +407,11 @@ def parse(arg, noErrExit=False, lindex=0, fname=sys.argv[1]):
             skip_ += len(block)
 
             try:
-                while evaluate(condition, lindex, noErrExit) == 1:
+                while evaluate(condition, lindex, noErrExit, fname) == 1:
                     output = parse(block, noErrExit, lindex)
                     if output != None:
                         return output
-                    if evaluate(condition, lindex, noErrExit) != 1:
+                    if evaluate(condition, lindex, noErrExit, fname) != 1:
                         break
             except KeyboardInterrupt:
                 err(f"Lea: at line {lindex}, file '{fname}': Loop force exited by ^C")
@@ -389,20 +457,20 @@ def parse(arg, noErrExit=False, lindex=0, fname=sys.argv[1]):
             continue
         elif line[0:len('return')] == 'return':
             if "/return" in line:
-                return evaluate(line[len("return"):line.index("/return")].strip(), lindex, noErrExit)
+                return evaluate(line[len("return"):line.index("/return")].strip(), lindex, noErrExit, fname)
             else:
                 err(f"Lea: at line {lindex}, file '{fname}': return statement isn't ended by '/return'")
         else:
-            a = evaluate(line, lindex, noErrExit)
+            a = evaluate(line, lindex, noErrExit, fname)
 try:
-    file = open(sys.argv[1], 'r').read().split('\n')
+    file = open(sys.argv[1], 'r', encoding='utf-8').read().split('\n')
 except:
     if len(sys.argv) == 1:
         try:
             print("Lea Shell")
             while True:
                 input_ = input(">>>")
-                parse([input_], True)
+                parse([input_], True, 0, '<stdin>')
 
         except KeyboardInterrupt:
             sys.exit(0)

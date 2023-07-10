@@ -1,0 +1,7 @@
+"i": 0
+"text": "Hello World!"
+
+loop $"i" != $"text".len ??
+    echo $"text"[$"i"] /echo
+    "i": $"i"++
+/loop

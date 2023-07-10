@@ -1,0 +1,2 @@
+"text": input "Type your input: " /input
+echo "Input: " + $"text" /echo

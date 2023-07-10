@@ -1,0 +1,9 @@
+"i": 25
+"j": 50
+
+if $"i" == 25 ??
+    echo "Hello World!" /echo
+    if $"j"/2 == $"i" ??
+        echo "Hello World!" /echo
+    /if
+/if
